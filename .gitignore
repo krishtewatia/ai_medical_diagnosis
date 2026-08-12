@@ -1,0 +1,49 @@
+# Environments & Secrets
+.env
+.env.local
+.venv
+env/
+venv/
+ENV/
+
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ML Models & Heavy Weights (Store on LFS, Cloud Storage, or download on startup)
+*.keras
+*.h5
+*.hdf5
+*.joblib
+*.pkl
+*.pickle
+*.pth
+*.pt
+*.onnx
+*.tflite
+*.safetensors
+*.bin
+*.ckpt
+
+# Frontend / Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+dist/
+build/
+
+# Application Storage & Logs
+backend/app/storage/*
+!backend/app/storage/.gitkeep
+*.log
+
+# Operating System & IDE Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

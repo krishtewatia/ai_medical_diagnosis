@@ -1,0 +1,40 @@
+{
+    "disease": "diabetes",
+    "model_version": "v1",
+    "model_type": "LogisticRegression",
+    "features": [
+        "Pregnancies",
+        "Glucose",
+        "BloodPressure",
+        "BMI",
+        "DiabetesPedigreeFunction",
+        "Age"
+    ],
+    "removed_features": [
+        "Insulin",
+        "SkinThickness"
+    ],
+    "hyperparameters": {
+        "C": 0.1,
+        "class_weight": "balanced",
+        "solver": "lbfgs"
+    },
+    "decision_threshold": 0.4,
+    "validation": {
+        "cv_folds": 5,
+        "cv_roc_auc": 0.844994
+    },
+    "test_metrics": {
+        "accuracy": 0.720779,
+        "precision": 0.56962,
+        "recall": 0.833333,
+        "f1": 0.676692,
+        "roc_auc": 0.81,
+        "specificity": 0.66
+    },
+    "dataset": {
+        "name": "Pima Indians Diabetes Database",
+        "samples": 768
+    },
+    "purpose": "Screening/research prototype, not medical diagnosis"
+}

@@ -1,0 +1,53 @@
+{
+    "disease": "heart_disease",
+    "model_version": "v1",
+    "model_type": "XGBoost",
+    "features": [
+        "age",
+        "sex",
+        "chest_pain_type",
+        "resting_bp",
+        "cholestoral",
+        "fasting_blood_sugar",
+        "restecg",
+        "max_hr",
+        "exang",
+        "oldpeak",
+        "slope",
+        "num_major_vessels",
+        "thal"
+    ],
+    "preprocessing": {
+        "imputer": "median"
+    },
+    "hyperparameters": {
+        "n_estimators": 200,
+        "max_depth": 2,
+        "learning_rate": 0.03
+    },
+    "decision_threshold": 0.4,
+    "validation": {
+        "cv_folds": 5,
+        "cv_roc_auc": 0.9028
+    },
+    "test_metrics": {
+        "accuracy": 0.8033,
+        "precision": 0.7561,
+        "recall": 0.9394,
+        "f1": 0.8378,
+        "roc_auc": 0.9026,
+        "specificity": 0.6429
+    },
+    "confusion_matrix": {
+        "true_negative": 18,
+        "false_positive": 10,
+        "false_negative": 2,
+        "true_positive": 31
+    },
+    "dataset": {
+        "samples_after_cleaning": 302,
+        "features": 13,
+        "test_samples": 61
+    },
+    "purpose": "Screening/research prototype, not medical diagnosis"
+}
