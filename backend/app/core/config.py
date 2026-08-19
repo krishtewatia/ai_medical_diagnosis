@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     mongodb_uri: str
     database_name: str = "ai_medical_diagnosis"
 
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         extra="ignore"

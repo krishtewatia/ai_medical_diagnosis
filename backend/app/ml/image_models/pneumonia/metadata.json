@@ -1,1 +1,64 @@
-{}
+{
+  "name": "Pneumonia Detection Model v1",
+  "architecture": "DenseNet121",
+  "framework": "TensorFlow / Keras",
+  "task": "Binary chest X-ray classification",
+  "purpose": "Research/screening prototype",
+  "clinical_diagnosis": false,
+  "dataset": {
+    "name": "RSNA Pneumonia Detection Challenge processed dataset",
+    "source": "iamtapendu/rsna-pneumonia-processed-dataset",
+    "original_metadata_rows": 30227,
+    "unique_patients": 26684,
+    "training_images": 26684,
+    "external_test_images": 3000
+  },
+  "labels": {
+    "0": "No Lung Opacity",
+    "1": "Lung Opacity"
+  },
+  "input": {
+    "original_format": "PNG",
+    "model_input_dimensions": "224x224x3",
+    "dtype": "float32"
+  },
+  "preprocessing": {
+    "load_image": "grayscale",
+    "resize": "224x224",
+    "grayscale_to_rgb": true,
+    "normalization": "tf.keras.applications.densenet.preprocess_input"
+  },
+  "model_architecture": {
+    "backbone": "DenseNet121",
+    "pretrained_weights": "ImageNet",
+    "pooling": "GlobalAveragePooling2D",
+    "dropout": 0.30,
+    "output_activation": "sigmoid"
+  },
+  "validation_metrics": {
+    "accuracy": 0.7858347386,
+    "precision": 0.5237711523,
+    "recall": 0.5407653910,
+    "f1": 0.5321326238,
+    "roc_auc": 0.8098566074
+  },
+  "confusion_matrix": {
+    "true_negative": 3544,
+    "false_positive": 591,
+    "false_negative": 552,
+    "true_positive": 650
+  },
+  "threshold": {
+    "selected_threshold": 0.30,
+    "positive_class": "Lung Opacity",
+    "threshold_selection_note": "0.30 selected as operating threshold for screening prototype."
+  },
+  "artifacts": {
+    "final_model": "pneumonia_densenet121.keras"
+  },
+  "safety": {
+    "purpose": "AI screening/research",
+    "not_a_diagnosis": true,
+    "clinical_note": "Lung opacity detection is the model learned classification target; it should not be represented as a definitive clinical diagnosis of pneumonia."
+  }
+}

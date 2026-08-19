@@ -1,0 +1,40 @@
+{
+  "id": "pneumonia",
+  "version": "v1",
+  "is_active": true,
+  "display_name": "Pneumonia Chest X-ray Screening",
+  "category": "image",
+  "input_type": "image_upload",
+  "short_description": "Deep learning analysis of frontal chest radiographs for lung opacity detection.",
+  "framework": "tensorflow",
+  "model_type": "DenseNet121",
+  "artifact_filename": "pneumonia_densenet121.keras",
+  "metadata_filename": "metadata.json",
+  "image_spec": {
+    "allowed_formats": ["png", "jpg", "jpeg"],
+    "max_size_bytes": 15728640,
+    "target_dimensions": [224, 224],
+    "channels": 3
+  },
+  "preprocessing": {
+    "load_mode": "grayscale",
+    "grayscale_to_rgb": true,
+    "target_size": [224, 224],
+    "normalization": "tf.keras.applications.densenet.preprocess_input",
+    "additional_divide_by_255": false
+  },
+  "decision_threshold": 0.30,
+  "positive_label": "Lung Opacity Detected",
+  "negative_label": "No Lung Opacity Detected",
+  "supports_probability": true,
+  "metrics": {
+    "roc_auc": 0.8099,
+    "recall": 0.5408,
+    "precision": 0.5238,
+    "accuracy": 0.7858,
+    "f1": 0.5321
+  },
+  "clinical_purpose": "Research and screening prototype for lung opacity detection from chest radiographs.",
+  "is_diagnostic_tool": false,
+  "disclaimer": "Lung opacity detection is an AI screening result and does not represent a definitive clinical diagnosis of pneumonia. Always consult a certified radiologist or physician."
+}

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.security import hash_password
+from app.api.dependencies import get_current_user
+from app.core.security import create_access_token, hash_password, verify_password
 from app.database.connection import get_database
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import TokenResponse, UserCreate, UserLogin, UserResponse
 from app.services.user_service import UserService
 
 
@@ -44,3 +45,51 @@ def register_user(user: UserCreate):
         email=created_user["email"]
     )
 
+
+@router.post(
+    "/login",
+    response_model=TokenResponse
+)
+def login_user(user: UserLogin):
+    database = get_database()
+
+    user_service = UserService(database)
+
+    existing_user = user_service.find_by_email(user.email)
+
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password."
+        )
+
+    if not verify_password(
+        user.password,
+        existing_user["password_hash"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password."
+        )
+
+    access_token = create_access_token(
+        str(existing_user["_id"])
+    )
+
+    return TokenResponse(
+        access_token=access_token
+    )
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse
+)
+def get_me(
+    current_user: dict = Depends(get_current_user)
+):
+    return UserResponse(
+        id=str(current_user["_id"]),
+        name=current_user["name"],
+        email=current_user["email"]
+    )
