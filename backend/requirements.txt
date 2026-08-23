@@ -29,3 +29,6 @@ h5py>=3.11.0
 pytest>=8.3.0
 mongomock>=4.3.0
 httpx>=0.28.0
+
+# Clinical PDF Report Generation
+reportlab>=4.2.0
