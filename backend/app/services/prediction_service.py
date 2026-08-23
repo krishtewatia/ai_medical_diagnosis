@@ -29,6 +29,12 @@ from app.schemas.prediction_history import (
     PredictionResultRecord,
 )
 from app.services.prediction_history_service import PredictionHistoryService
+from app.services.storage_service import (
+    StorageError,
+    StorageService,
+    StoredImageMetadata,
+    default_storage_service,
+)
 
 
 class PredictionServiceError(Exception):
@@ -44,22 +50,25 @@ class PredictionInferenceError(RuntimeError, PredictionServiceError):
 class PredictionService:
     """
     Business logic layer that orchestrates the end-to-end prediction lifecycle:
-    Prediction Request -> Input Validation -> Disease Lookup -> Predictor Resolution
-    -> Model Inference -> History Persistence -> Standard PredictionResponse.
+    Prediction Request -> Input Validation -> Disease Lookup -> Object Storage Upload
+    -> Predictor Resolution -> Model Inference -> History Persistence -> Standard PredictionResponse.
     
     Guarantees:
-    1. Validation First: Invalid or malformed inputs are halted and rejected BEFORE reaching model.
-    2. Atomic History Saving: History is saved ONLY after successful model inference.
-    3. User Isolation: Predictions are tagged with the verified JWT user_id.
+    1. Validation First: Invalid or malformed inputs are halted and rejected BEFORE reaching storage or model.
+    2. Atomic Storage Cleanup: Uploaded objects are cleaned up if model inference fails.
+    3. Metadata-Only Persistence: Only storage paths, hashes, and telemetry are stored in MongoDB (no raw binaries).
+    4. User Isolation: Predictions and storage keys are strictly scoped to the verified JWT user_id.
     """
 
     def __init__(
         self,
         registry: Optional[DiseaseRegistry] = None,
-        history_service: Optional[PredictionHistoryService] = None
+        history_service: Optional[PredictionHistoryService] = None,
+        storage_service: Optional[StorageService] = None
     ):
         self.registry = registry or default_registry
         self.history_service = history_service
+        self.storage_service = storage_service or default_storage_service
 
     def _resolve_predictor(self, config: DiseaseConfig) -> BasePredictor:
         """
@@ -84,7 +93,6 @@ class PredictionService:
         try:
             self.history_service.create_prediction(user_id=user_id, payload=history_record)
         except Exception as e:
-            # Telemetry/history persistence warning logged without interrupting user flow
             print(f"Warning: Failed to persist prediction history for user {user_id}: {e}")
 
     def predict_tabular(
@@ -173,8 +181,9 @@ class PredictionService:
         user_id: Optional[Union[str, ObjectId]] = None
     ) -> PredictionResponse:
         """
-        Validates image payload and executes screening inference for medical image diseases.
-        Saves immutable prediction record to MongoDB upon successful inference.
+        Validates image payload, securely stores it in object storage, and executes screening inference.
+        If model inference fails, the uploaded object is automatically deleted to prevent orphaned files.
+        Saves immutable metadata reference to MongoDB upon successful inference.
         """
         d_id = disease_id.strip().lower()
         config = self.registry.get_or_raise(d_id)
@@ -194,17 +203,37 @@ class PredictionService:
             content_type=content_type
         )
 
-        # 3. Model Resolution & Inference Execution
+        # 3. Secure Production Object Storage Upload
+        stored_metadata: Optional[StoredImageMetadata] = None
+        effective_user = str(user_id) if user_id else "anonymous"
+        try:
+            stored_metadata = self.storage_service.upload_file(
+                image_bytes=validated_bytes,
+                filename=filename or "medical_image.png",
+                content_type=content_type or "image/png",
+                disease_id=d_id,
+                user_id=effective_user
+            )
+        except Exception as e:
+            raise PredictionServiceError(f"Failed to upload medical image to object storage: {str(e)}") from e
+
+        # 4. Model Resolution & Inference Execution (with automatic cleanup on inference failure)
         predictor = self._resolve_predictor(config)
 
         start_time = time.perf_counter()
         try:
             result: PredictionResult = predictor.predict(validated_bytes)
         except (InputValidationError, ValueError) as e:
+            # Cleanup stored object on failure
+            if stored_metadata:
+                self.storage_service.delete_object(stored_metadata.storage_key)
             raise PredictionValidationError(
                 f"Image validation failed for disease '{d_id}': {str(e)}"
             ) from e
         except (InferenceError, Exception) as e:
+            # Cleanup stored object on failure
+            if stored_metadata:
+                self.storage_service.delete_object(stored_metadata.storage_key)
             raise PredictionInferenceError(
                 f"Image inference failed for disease '{d_id}': {str(e)}"
             ) from e
@@ -218,8 +247,17 @@ class PredictionService:
             disclaimer=config.disclaimer,
         )
 
-        # 4. Save to MongoDB Prediction History (only on verified success)
+        # 5. Save to MongoDB Prediction History (Stores metadata/reference, NEVER raw binary)
         if user_id:
+            input_history_data: Dict[str, Any] = {
+                "file_name": stored_metadata.file_name,
+                "content_type": stored_metadata.content_type,
+                "file_size": stored_metadata.file_size,
+                "storage_key": stored_metadata.storage_key,
+                "uploaded_at": stored_metadata.uploaded_at,
+                "sha256": stored_metadata.sha256,
+            }
+
             history_record = PredictionHistoryCreate(
                 user_id=str(user_id),
                 disease=config.id,
@@ -230,11 +268,7 @@ class PredictionService:
                     model_type=config.model_type,
                     threshold=config.decision_threshold,
                 ),
-                input_data={
-                    "filename": Path(filename).name if filename else "medical_image",
-                    "content_type": content_type or "image/png",
-                    "size_bytes": len(image_bytes),
-                },
+                input_data=input_history_data,
                 result=PredictionResultRecord(
                     prediction=result.prediction_label,
                     is_positive=result.is_positive,
@@ -245,6 +279,7 @@ class PredictionService:
                 metadata={
                     "source": "api",
                     "latency_ms": latency_ms,
+                    "storage_key": stored_metadata.storage_key,
                 },
             )
             self._save_history_safely(user_id, history_record)

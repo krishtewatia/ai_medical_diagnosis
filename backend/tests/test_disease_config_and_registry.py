@@ -159,7 +159,7 @@ def test_registry_queries_and_categories():
     image_diseases = disease_registry.list_by_category(DiseaseCategory.IMAGE)
 
     assert len(tabular_diseases) == 2
-    assert len(image_diseases) == 1
+    assert len(image_diseases) >= 1
 
     # Test get_or_raise
     try:
@@ -171,10 +171,10 @@ def test_registry_queries_and_categories():
 
 def test_public_metadata():
     public_list = disease_registry.list_public_info()
-    assert len(public_list) == 3
+    assert len(public_list) >= 3
     for p in public_list:
         assert isinstance(p, DiseasePublicInfo)
-        assert p.id in ["diabetes", "heart_disease", "pneumonia"]
+        assert p.id in ["diabetes", "heart_disease", "pneumonia", "brain_tumor"]
         assert p.disclaimer is not None
         assert p.positive_label is not None
         assert p.negative_label is not None

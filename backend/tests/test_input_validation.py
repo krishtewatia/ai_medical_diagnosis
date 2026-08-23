@@ -15,6 +15,7 @@ Tests:
 """
 
 import sys
+import uuid
 from pathlib import Path
 import pytest
 from pydantic import ValidationError
@@ -288,9 +289,13 @@ def test_image_validation_layer():
 def test_api_422_integration():
     """9. Verify FastAPI returns 422 Unprocessable Entity for invalid domain values."""
     client = TestClient(app)
-    u_svc = UserService(mock_db)
-    u = u_svc.create_user(name="ValPatient", email="val@example.com", password_hash="hash")
-    headers = {"Authorization": f"Bearer {create_access_token(str(u['_id']))}"}
+    suffix = uuid.uuid4().hex[:8]
+    reg = client.post("/auth/register", json={
+        "name": f"ValPatient {suffix}",
+        "email": f"val_{suffix}@example.com",
+        "password": "Password123!"
+    })
+    headers = {"Authorization": f"Bearer {create_access_token(reg.json()['id'])}"}
 
     # Diabetes with Glucose below min limit (Glucose=5.0)
     payload = {

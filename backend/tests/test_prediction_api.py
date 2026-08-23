@@ -16,6 +16,7 @@ Tests:
 """
 
 import sys
+import uuid
 from pathlib import Path
 import pytest
 
@@ -44,14 +45,14 @@ def api_client():
 
 @pytest.fixture(scope="module")
 def auth_headers():
-    user_service = UserService(mock_db)
-    user = user_service.create_user(
-        name="Test Patient",
-        email="patient@example.com",
-        password_hash="mock_hash_patient"
-    )
-    user_id = str(user["_id"])
-    token = create_access_token(user_id)
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    reg = client.post("/auth/register", json={
+        "name": f"Test Patient {suffix}",
+        "email": f"patient_{suffix}@example.com",
+        "password": "Password123!"
+    })
+    token = create_access_token(reg.json()["id"])
     return {"Authorization": f"Bearer {token}"}
 
 

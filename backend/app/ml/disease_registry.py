@@ -70,6 +70,20 @@ class DiseaseRegistry:
             except Exception:
                 pass
 
+        if "pneumonia" in self._configs:
+            try:
+                from app.ml.image_models.pneumonia.predictor import PneumoniaPredictor
+                self.register_predictor("pneumonia", PneumoniaPredictor)
+            except Exception:
+                pass
+
+        if "brain_tumor" in self._configs:
+            try:
+                from app.ml.image_models.brain_tumor.predictor import BrainTumorPredictor
+                self.register_predictor("brain_tumor", BrainTumorPredictor)
+            except Exception:
+                pass
+
     def clear(self) -> None:
         """Clears all registered configurations and predictors (useful for unit testing)."""
         self._configs.clear()

@@ -22,6 +22,7 @@ Tests:
 
 import json
 import sys
+import uuid
 from pathlib import Path
 import pytest
 from sklearn.pipeline import Pipeline
@@ -50,9 +51,14 @@ app.dependency_overrides[get_database] = lambda: mock_db
 
 @pytest.fixture
 def auth_headers():
-    u_svc = UserService(mock_db)
-    u = u_svc.create_user(name="CardioPatient", email="cardio@example.com", password_hash="hash_cardio")
-    token = create_access_token(str(u["_id"]))
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    reg = client.post("/auth/register", json={
+        "name": f"CardioPatient {suffix}",
+        "email": f"cardio_{suffix}@example.com",
+        "password": "Password123!"
+    })
+    token = create_access_token(reg.json()["id"])
     return {"Authorization": f"Bearer {token}"}
 
 

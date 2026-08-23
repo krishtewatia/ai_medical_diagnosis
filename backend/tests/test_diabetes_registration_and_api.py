@@ -15,6 +15,7 @@ Tests:
 """
 
 import sys
+import uuid
 from pathlib import Path
 import pytest
 
@@ -42,9 +43,14 @@ app.dependency_overrides[get_database] = lambda: mock_db
 
 @pytest.fixture
 def auth_headers():
-    u_svc = UserService(mock_db)
-    u = u_svc.create_user(name="DiabetesPatient", email="diabetes_patient@example.com", password_hash="hash123")
-    token = create_access_token(str(u["_id"]))
+    client = TestClient(app)
+    suffix = uuid.uuid4().hex[:8]
+    reg = client.post("/auth/register", json={
+        "name": f"DiabetesPatient {suffix}",
+        "email": f"diabetes_{suffix}@example.com",
+        "password": "Password123!"
+    })
+    token = create_access_token(reg.json()["id"])
     return {"Authorization": f"Bearer {token}"}
 
 

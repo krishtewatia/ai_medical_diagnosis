@@ -18,9 +18,10 @@ router = APIRouter(
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED
 )
-def register_user(user: UserCreate):
-    database = get_database()
-
+def register_user(
+    user: UserCreate,
+    database = Depends(get_database),
+):
     user_service = UserService(database)
 
     existing_user = user_service.find_by_email(user.email)
@@ -50,9 +51,10 @@ def register_user(user: UserCreate):
     "/login",
     response_model=TokenResponse
 )
-def login_user(user: UserLogin):
-    database = get_database()
-
+def login_user(
+    user: UserLogin,
+    database = Depends(get_database),
+):
     user_service = UserService(database)
 
     existing_user = user_service.find_by_email(user.email)

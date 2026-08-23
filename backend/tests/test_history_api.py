@@ -218,19 +218,392 @@ def test_pagination_and_sorting(client_with_service):
     print("  PASS: 6 & 7. Pagination and newest-first sorting verified")
 
 
+def test_get_prediction_by_id_success(client_with_service):
+    """8. Verify authenticated user retrieves a specific prediction by valid ID."""
+    client, history_service = client_with_service
+    user_id = str(ObjectId())
+
+    rec = PredictionHistoryCreate(
+        user_id=user_id,
+        disease="diabetes",
+        disease_display_name="Diabetes Risk Assessment",
+        input_type="tabular",
+        model=PredictionModelInfo(version="v1", model_type="LogisticRegression", threshold=0.40),
+        input_data={"Glucose": 160.0, "BMI": 32.5, "Age": 45},
+        result=PredictionResultRecord(prediction="High Risk of Diabetes", is_positive=True, probability=0.89, confidence=0.92),
+        explanation="Elevated fasting plasma glucose and BMI indicate high screening risk.",
+        metadata={"source": "api", "latency_ms": 2.1},
+    )
+    created = history_service.create_prediction(user_id=user_id, payload=rec)
+    prediction_id = created["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "user@example.com"}
+
+    response = client.get(f"/history/{prediction_id}")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["id"] == prediction_id
+    assert data["user_id"] == user_id
+    assert data["disease"] == "diabetes"
+    assert data["disease_display_name"] == "Diabetes Risk Assessment"
+    assert data["input_type"] == "tabular"
+    assert data["model"]["version"] == "v1"
+    assert data["model"]["model_type"] == "LogisticRegression"
+    assert data["model"]["threshold"] == 0.40
+    assert data["input_data"] == {"Glucose": 160.0, "BMI": 32.5, "Age": 45}
+    assert data["result"]["prediction"] == "High Risk of Diabetes"
+    assert data["result"]["is_positive"] is True
+    assert data["result"]["probability"] == 0.89
+    assert data["result"]["confidence"] == 0.92
+    assert data["explanation"] == "Elevated fasting plasma glucose and BMI indicate high screening risk."
+    assert "created_at" in data
+    assert data["metadata"]["source"] == "api"
+
+    print("  PASS: 8. GET /history/{prediction_id} successfully retrieved complete structured document")
+
+
+def test_get_prediction_by_id_nonexistent_returns_404(client_with_service):
+    """9. Verify valid ObjectId format but nonexistent record returns 404."""
+    client, _ = client_with_service
+    user_id = str(ObjectId())
+    non_existent_pred_id = str(ObjectId())
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "user@example.com"}
+
+    response = client.get(f"/history/{non_existent_pred_id}")
+    assert response.status_code == 404
+    data = response.json()
+    assert data["detail"] == "Prediction record not found."
+
+    print("  PASS: 9. Nonexistent prediction ID returned 404 Not Found")
+
+
+def test_get_prediction_by_id_malformed_returns_400(client_with_service):
+    """10. Verify malformed prediction ID returns 400 Bad Request."""
+    client, _ = client_with_service
+    user_id = str(ObjectId())
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "user@example.com"}
+
+    response = client.get("/history/invalid-non-hex-id-123")
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Invalid prediction ID format."
+
+    print("  PASS: 10. Malformed prediction ID returned 400 Bad Request")
+
+
+def test_get_prediction_by_id_auth_missing_or_invalid(client_with_service):
+    """11. Verify missing or invalid JWT is rejected when querying /history/{prediction_id}."""
+    client, _ = client_with_service
+    pred_id = str(ObjectId())
+
+    if get_current_user in app.dependency_overrides:
+        del app.dependency_overrides[get_current_user]
+
+    # No auth header
+    res_no_auth = client.get(f"/history/{pred_id}")
+    assert res_no_auth.status_code in (401, 403)
+
+    # Invalid token
+    res_bad_auth = client.get(f"/history/{pred_id}", headers={"Authorization": "Bearer bad_token_xyz"})
+    assert res_bad_auth.status_code == 401
+
+    print("  PASS: 11. Missing / Invalid JWT rejected on GET /history/{prediction_id}")
+
+
+def test_get_prediction_by_id_cross_user_isolation(client_with_service):
+    """12. CRITICAL SECURITY TEST: User A requesting User B's prediction must return 404."""
+    client, history_service = client_with_service
+    user_a = str(ObjectId())
+    user_b = str(ObjectId())
+
+    # User A creates Prediction A
+    rec_a = PredictionHistoryCreate(
+        user_id=user_a,
+        disease="diabetes",
+        disease_display_name="Diabetes Assessment",
+        input_type="tabular",
+        model=PredictionModelInfo(version="v1", model_type="LR"),
+        input_data={"secret_patient_data": "User A Private Info"},
+        result=PredictionResultRecord(prediction="Diabetes High Risk", is_positive=True, probability=0.95),
+    )
+    pred_a = history_service.create_prediction(user_a, rec_a)
+
+    # User B creates Prediction B
+    rec_b = PredictionHistoryCreate(
+        user_id=user_b,
+        disease="heart_disease",
+        disease_display_name="Heart Disease Assessment",
+        input_type="tabular",
+        model=PredictionModelInfo(version="v1", model_type="XGBoost"),
+        input_data={"secret_patient_data": "User B Private Info"},
+        result=PredictionResultRecord(prediction="Heart Disease Elevated Risk", is_positive=True, probability=0.88),
+    )
+    pred_b = history_service.create_prediction(user_b, rec_b)
+
+    # User A attempts to access User B's prediction
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_a), "email": "a@ex.com"}
+    res_a_reading_b = client.get(f"/history/{pred_b['id']}")
+    assert res_a_reading_b.status_code == 404, "SECURITY BREACH: User A must not access User B's prediction!"
+    assert res_a_reading_b.json()["detail"] == "Prediction record not found."
+
+    # User B attempts to access User A's prediction
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_b), "email": "b@ex.com"}
+    res_b_reading_a = client.get(f"/history/{pred_a['id']}")
+    assert res_b_reading_a.status_code == 404, "SECURITY BREACH: User B must not access User A's prediction!"
+    assert res_b_reading_a.json()["detail"] == "Prediction record not found."
+
+    # User A successfully accesses User A's prediction
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_a), "email": "a@ex.com"}
+    res_a_reading_a = client.get(f"/history/{pred_a['id']}")
+    assert res_a_reading_a.status_code == 200
+    assert res_a_reading_a.json()["id"] == pred_a["id"]
+
+    # User B successfully accesses User B's prediction
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_b), "email": "b@ex.com"}
+    res_b_reading_b = client.get(f"/history/{pred_b['id']}")
+    assert res_b_reading_b.status_code == 200
+    assert res_b_reading_b.json()["id"] == pred_b["id"]
+
+    print("  PASS: 12. Strict tenant isolation verified: Cross-user prediction lookups returned 404 Not Found")
+
+
+def test_history_disease_filtering_diabetes_and_heart(client_with_service):
+    """13. Verify filtering user history by registered disease IDs."""
+    client, history_service = client_with_service
+    user_id = str(ObjectId())
+
+    # Create 2 Diabetes and 1 Heart Disease prediction
+    history_service.create_prediction(
+        user_id=user_id,
+        payload=PredictionHistoryCreate(
+            user_id=user_id,
+            disease="diabetes",
+            disease_display_name="Diabetes Assessment 1",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="LR"),
+            input_data={"Glucose": 140.0},
+            result=PredictionResultRecord(prediction="Diabetes Risk", is_positive=True, probability=0.8),
+        )
+    )
+    history_service.create_prediction(
+        user_id=user_id,
+        payload=PredictionHistoryCreate(
+            user_id=user_id,
+            disease="diabetes",
+            disease_display_name="Diabetes Assessment 2",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="LR"),
+            input_data={"Glucose": 180.0},
+            result=PredictionResultRecord(prediction="Diabetes High Risk", is_positive=True, probability=0.95),
+        )
+    )
+    history_service.create_prediction(
+        user_id=user_id,
+        payload=PredictionHistoryCreate(
+            user_id=user_id,
+            disease="heart_disease",
+            disease_display_name="Heart Disease Assessment",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="XGBoost"),
+            input_data={"Cholesterol": 240.0},
+            result=PredictionResultRecord(prediction="Heart Disease Risk", is_positive=True, probability=0.75),
+        )
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "filter@example.com"}
+
+    # No filter -> returns all 3
+    res_all = client.get("/history")
+    assert res_all.status_code == 200
+    assert res_all.json()["total"] == 3
+    assert len(res_all.json()["items"]) == 3
+
+    # Filter disease=diabetes -> returns 2
+    res_diab = client.get("/history?disease=diabetes")
+    assert res_diab.status_code == 200
+    data_diab = res_diab.json()
+    assert data_diab["total"] == 2
+    assert len(data_diab["items"]) == 2
+    assert all(item["disease"] == "diabetes" for item in data_diab["items"])
+
+    # Filter disease=heart_disease -> returns 1
+    res_heart = client.get("/history?disease=heart_disease")
+    assert res_heart.status_code == 200
+    data_heart = res_heart.json()
+    assert data_heart["total"] == 1
+    assert len(data_heart["items"]) == 1
+    assert data_heart["items"][0]["disease"] == "heart_disease"
+
+    print("  PASS: 13. Disease filtering for diabetes, heart_disease, and no-filter verified")
+
+
+def test_history_disease_filtering_unknown_disease(client_with_service):
+    """14. Verify unknown disease query parameter receives appropriate validation error (404)."""
+    client, _ = client_with_service
+    user_id = str(ObjectId())
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "user@example.com"}
+
+    response = client.get("/history?disease=unknown_nonexistent_disease_xyz")
+    assert response.status_code == 404
+    data = response.json()
+    assert "not registered or not available" in data["detail"]
+
+    print("  PASS: 14. Unknown disease query param returned 404 Not Found error")
+
+
+def test_history_disease_filtering_pagination_and_sorting(client_with_service):
+    """15. Verify pagination and newest-first sorting operate seamlessly with disease filter."""
+    client, history_service = client_with_service
+    user_id = str(ObjectId())
+    base_time = datetime.now(timezone.utc)
+
+    # Insert 4 Diabetes records and 2 Heart Disease records with distinct times
+    for i in range(4):
+        history_service.create_prediction(
+            user_id=user_id,
+            payload=PredictionHistoryCreate(
+                user_id=user_id,
+                disease="diabetes",
+                disease_display_name="Diabetes",
+                input_type="tabular",
+                model=PredictionModelInfo(version="v1", model_type="LR"),
+                input_data={"seq": i},
+                result=PredictionResultRecord(prediction="P", is_positive=True),
+                created_at=base_time + timedelta(minutes=i),
+            )
+        )
+    for j in range(2):
+        history_service.create_prediction(
+            user_id=user_id,
+            payload=PredictionHistoryCreate(
+                user_id=user_id,
+                disease="heart_disease",
+                disease_display_name="Heart Disease",
+                input_type="tabular",
+                model=PredictionModelInfo(version="v1", model_type="XGBoost"),
+                input_data={"heart_seq": j},
+                result=PredictionResultRecord(prediction="P", is_positive=True),
+                created_at=base_time + timedelta(minutes=10 + j),
+            )
+        )
+
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_id), "email": "page_filter@example.com"}
+
+    # Page 1 of Diabetes: limit=2, skip=0 (expect seq=3, seq=2, total=4)
+    p1 = client.get("/history?disease=diabetes&limit=2&skip=0").json()
+    assert p1["total"] == 4
+    assert len(p1["items"]) == 2
+    assert p1["items"][0]["input_data"]["seq"] == 3
+    assert p1["items"][1]["input_data"]["seq"] == 2
+
+    # Page 2 of Diabetes: limit=2, skip=2 (expect seq=1, seq=0, total=4)
+    p2 = client.get("/history?disease=diabetes&limit=2&skip=2").json()
+    assert p2["total"] == 4
+    assert len(p2["items"]) == 2
+    assert p2["items"][0]["input_data"]["seq"] == 1
+    assert p2["items"][1]["input_data"]["seq"] == 0
+
+    print("  PASS: 15. Pagination and sorting with disease filter verified")
+
+
+def test_history_disease_filtering_user_isolation(client_with_service):
+    """16. CRITICAL SECURITY TEST: Ensure filtered queries strictly maintain user isolation."""
+    client, history_service = client_with_service
+    user_a = str(ObjectId())
+    user_b = str(ObjectId())
+
+    # User A: 1 Diabetes, 1 Heart Disease
+    history_service.create_prediction(
+        user_id=user_a,
+        payload=PredictionHistoryCreate(
+            user_id=user_a,
+            disease="diabetes",
+            disease_display_name="Diabetes Assessment",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="LR"),
+            input_data={"patient": "User A Diabetes"},
+            result=PredictionResultRecord(prediction="Positive", is_positive=True),
+        )
+    )
+    history_service.create_prediction(
+        user_id=user_a,
+        payload=PredictionHistoryCreate(
+            user_id=user_a,
+            disease="heart_disease",
+            disease_display_name="Heart Assessment",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="XGBoost"),
+            input_data={"patient": "User A Heart"},
+            result=PredictionResultRecord(prediction="Positive", is_positive=True),
+        )
+    )
+
+    # User B: 1 Diabetes
+    history_service.create_prediction(
+        user_id=user_b,
+        payload=PredictionHistoryCreate(
+            user_id=user_b,
+            disease="diabetes",
+            disease_display_name="Diabetes Assessment",
+            input_type="tabular",
+            model=PredictionModelInfo(version="v1", model_type="LR"),
+            input_data={"patient": "User B Diabetes"},
+            result=PredictionResultRecord(prediction="Positive", is_positive=True),
+        )
+    )
+
+    # User A queries disease=diabetes -> should get only User A's Diabetes record
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_a), "email": "a@ex.com"}
+    res_a_diab = client.get("/history?disease=diabetes")
+    assert res_a_diab.status_code == 200
+    data_a_diab = res_a_diab.json()
+    assert data_a_diab["total"] == 1
+    assert data_a_diab["items"][0]["input_data"]["patient"] == "User A Diabetes"
+
+    # User B queries disease=diabetes -> should get only User B's Diabetes record
+    app.dependency_overrides[get_current_user] = lambda: {"_id": ObjectId(user_b), "email": "b@ex.com"}
+    res_b_diab = client.get("/history?disease=diabetes")
+    assert res_b_diab.status_code == 200
+    data_b_diab = res_b_diab.json()
+    assert data_b_diab["total"] == 1
+    assert data_b_diab["items"][0]["input_data"]["patient"] == "User B Diabetes"
+
+    # User B queries disease=heart_disease -> should get 0 records
+    res_b_heart = client.get("/history?disease=heart_disease")
+    assert res_b_heart.status_code == 200
+    data_b_heart = res_b_heart.json()
+    assert data_b_heart["total"] == 0
+    assert data_b_heart["items"] == []
+
+    print("  PASS: 16. User isolation strictly enforced on filtered disease history queries")
+
+
 if __name__ == "__main__":
-    print("\n=== GET /history API Verification Tests ===\n")
+    print("\n=== GET /history and GET /history/{prediction_id} API Verification Tests ===\n")
     mock_hs = mongomock.MongoClient()["test_history_api_runner_db"]
     hs = PredictionHistoryService(db=mock_hs)
     app.dependency_overrides[get_history_service] = lambda: hs
     c = TestClient(app)
 
     tests = [
-        ("1. User Retrieves History", lambda: test_authenticated_user_retrieves_history((c, hs))),
+        ("1. User Retrieves History List", lambda: test_authenticated_user_retrieves_history((c, hs))),
         ("2. Empty History List", lambda: test_user_with_no_history_receives_empty_list((c, hs))),
-        ("3 & 4. Auth Protection", lambda: test_missing_or_invalid_auth_rejected((c, hs))),
-        ("5. Security & Isolation", lambda: test_critical_security_tenant_isolation((c, hs))),
+        ("3 & 4. Auth Protection on List", lambda: test_missing_or_invalid_auth_rejected((c, hs))),
+        ("5. Security & Isolation on List", lambda: test_critical_security_tenant_isolation((c, hs))),
         ("6 & 7. Pagination & Sorting", lambda: test_pagination_and_sorting((c, hs))),
+        ("8. User Retrieves Prediction By ID", lambda: test_get_prediction_by_id_success((c, hs))),
+        ("9. Nonexistent Prediction ID (404)", lambda: test_get_prediction_by_id_nonexistent_returns_404((c, hs))),
+        ("10. Malformed Prediction ID (400)", lambda: test_get_prediction_by_id_malformed_returns_400((c, hs))),
+        ("11. Auth Protection on Detail Endpoint", lambda: test_get_prediction_by_id_auth_missing_or_invalid((c, hs))),
+        ("12. Tenant Isolation Cross-User Access Blocked (404)", lambda: test_get_prediction_by_id_cross_user_isolation((c, hs))),
+        ("13. Disease Filtering (Diabetes & Heart)", lambda: test_history_disease_filtering_diabetes_and_heart((c, hs))),
+        ("14. Unknown Disease Query Param (404)", lambda: test_history_disease_filtering_unknown_disease((c, hs))),
+        ("15. Disease Filtering Pagination & Sorting", lambda: test_history_disease_filtering_pagination_and_sorting((c, hs))),
+        ("16. Filtered Query Tenant Isolation", lambda: test_history_disease_filtering_user_isolation((c, hs))),
     ]
 
     passed = 0
@@ -245,7 +618,9 @@ if __name__ == "__main__":
 
     app.dependency_overrides.clear()
 
-    print(f"\n{'=' * 55}")
+    print(f"\n{'=' * 65}")
     print(f"Results: {passed} passed, {failed} failed")
-    print(f"{'=' * 55}\n")
+    print(f"{'=' * 65}\n")
     sys.exit(1 if failed else 0)
+
+

@@ -42,6 +42,7 @@ app.dependency_overrides[get_database] = lambda: mock_db
 
 
 def test_profile_api_flow():
+    app.dependency_overrides[get_database] = lambda: mock_db
     client = TestClient(app)
     user_service = UserService(mock_db)
 

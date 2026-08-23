@@ -1,0 +1,38 @@
+{
+  "id": "brain_tumor",
+  "version": "v1",
+  "is_active": true,
+  "display_name": "Brain Tumor MRI Screening",
+  "category": "image",
+  "input_type": "image_upload",
+  "short_description": "Deep learning neuroimaging analysis of axial brain MRI scans for intracranial neoplasm detection.",
+  "framework": "tensorflow",
+  "model_type": "ResNet50",
+  "artifact_filename": "mri_model.keras",
+  "metadata_filename": "metadata.json",
+  "image_spec": {
+    "allowed_formats": ["png", "jpg", "jpeg"],
+    "max_size_bytes": 15728640,
+    "target_dimensions": [224, 224],
+    "channels": 3
+  },
+  "preprocessing": {
+    "color_mode": "RGB",
+    "target_size": [224, 224],
+    "normalization": "tf.keras.applications.resnet50.preprocess_input"
+  },
+  "decision_threshold": 0.50,
+  "positive_label": "Intracranial Neoplasm Detected",
+  "negative_label": "No Intracranial Lesion Detected",
+  "supports_probability": true,
+  "metrics": {
+    "roc_auc": 0.9850,
+    "recall": 0.9400,
+    "precision": 0.9430,
+    "accuracy": 0.9420,
+    "f1": 0.9410
+  },
+  "clinical_purpose": "Research and screening prototype for intracranial lesion detection from axial brain MRI scans.",
+  "is_diagnostic_tool": false,
+  "disclaimer": "Brain MRI screening is an automated AI decision-support output and does not represent a definitive medical diagnosis. Always consult a certified neuroradiologist or physician."
+}

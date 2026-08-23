@@ -30,6 +30,11 @@ htmlcov/
 *.bin
 *.ckpt
 
+# Keep active MVP model artifacts in repository
+!backend/app/ml/**/*.joblib
+!backend/app/ml/**/*.pkl
+!backend/app/ml/**/*.keras
+
 # Frontend / Node
 node_modules/
 npm-debug.log*
