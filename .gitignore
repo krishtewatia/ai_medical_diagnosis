@@ -1,6 +1,9 @@
 # Environments & Secrets
 .env
-.env.local
+.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
 .venv
 env/
 venv/
@@ -15,13 +18,9 @@ __pycache__/
 .coverage
 htmlcov/
 
-# ML Models & Heavy Weights (Store on LFS, Cloud Storage, or download on startup)
-*.keras
+# ML Models & Heavy Weights (Exclude external model caches if any)
 *.h5
 *.hdf5
-*.joblib
-*.pkl
-*.pickle
 *.pth
 *.pt
 *.onnx
@@ -41,8 +40,11 @@ npm-debug.log*
 yarn-debug.log*
 dist/
 build/
+.next/
 
-# Application Storage & Logs
+# Application Uploads & Storage (Ignore all temporary medical uploads)
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
 backend/app/storage/*
 !backend/app/storage/.gitkeep
 *.log
@@ -52,3 +54,4 @@ backend/app/storage/*
 Thumbs.db
 .vscode/
 .idea/
+
