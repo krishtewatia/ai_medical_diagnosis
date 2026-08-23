@@ -12,6 +12,8 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 bcrypt>=4.2.0
 PyJWT
+argon2-cffi>=23.1.0
+boto3>=1.34.0
 
 # Data Science & Machine Learning (Tabular Models)
 numpy>=1.26.0
