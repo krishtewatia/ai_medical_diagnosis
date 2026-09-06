@@ -142,7 +142,7 @@ export const DynamicTabularForm: React.FC<DynamicTabularFormProps> = ({
       {profileLoaded && profile && (
         <div className="profile-autofill-banner">
           <div className="banner-text">
-            <UserCheck size={18} color="#10b981" />
+            <UserCheck size={18} color="#16a34a" />
             <span>
               Connected medical profile for <strong>{profile.gender}, DOB: {profile.date_of_birth}</strong>
             </span>
@@ -152,7 +152,7 @@ export const DynamicTabularForm: React.FC<DynamicTabularFormProps> = ({
             onClick={handleAutofillFromProfile}
             className="btn btn-secondary btn-sm"
           >
-            <Sparkles size={14} color="#38bdf8" />
+            <Sparkles size={14} color="#16a34a" />
             <span>Autofill Profile Biometrics</span>
           </button>
         </div>

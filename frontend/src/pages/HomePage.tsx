@@ -116,7 +116,7 @@ export const HomePage: React.FC = () => {
                 <div className="disease-card-header">
                   <div className="disease-card-icon">
                     {d.id === "diabetes" ? (
-                      <HeartPulse size={24} color="#38bdf8" />
+                      <HeartPulse size={24} color="#16a34a" />
                     ) : d.id === "heart_disease" ? (
                       <Activity size={24} color="#f43f5e" />
                     ) : (

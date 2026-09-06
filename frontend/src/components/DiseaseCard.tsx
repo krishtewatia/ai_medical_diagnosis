@@ -21,14 +21,14 @@ export const DiseaseCard: React.FC<DiseaseCardProps> = ({ disease }) => {
   const renderIcon = () => {
     switch (disease.id) {
       case "diabetes":
-        return <HeartPulse size={24} color="#38bdf8" />;
+        return <HeartPulse size={24} color="#16a34a" />;
       case "heart_disease":
         return <Activity size={24} color="#f43f5e" />;
       default:
         return disease.category === "image" ? (
           <Brain size={24} color="#8b5cf6" />
         ) : (
-          <Sparkles size={24} color="#06b6d4" />
+          <Sparkles size={24} color="#16a34a" />
         );
     }
   };

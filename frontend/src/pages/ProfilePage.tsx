@@ -563,7 +563,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1.25rem" }}>
+            <div className="profile-vitals-grid">
               <div className="snapshot-item">
                 <span className="snapshot-key">Age / Date of Birth</span>
                 <span className="snapshot-val">{age !== null ? `${age} yrs` : "—"} ({profile.date_of_birth})</span>
@@ -605,7 +605,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Clinical Details Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem" }}>
+          <div className="profile-details-grid">
             {/* Allergies & Conditions */}
             <div className="glass-card" style={{ padding: "1.75rem" }}>
               <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>

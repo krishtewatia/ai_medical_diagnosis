@@ -89,7 +89,7 @@ export const HistoryDetailPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+        <div className="history-detail-actions">
           <Link to={`/reports/${record.id}`} className="btn btn-primary">
             <FileText size={16} />
             <span>View PDF Report</span>

@@ -151,7 +151,7 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({
                 {isBrainMri ? (
                   <Brain size={32} color="#8b5cf6" />
                 ) : (
-                  <Upload size={32} color="#38bdf8" />
+                  <Upload size={32} color="#16a34a" />
                 )}
               </div>
               <h3 className="dropzone-title">
@@ -180,7 +180,7 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({
           <div className="image-preview-card glass-card" style={{ padding: "1.75rem", marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <FileImage size={20} color="#38bdf8" />
+                <FileImage size={20} color="#16a34a" />
                 <span style={{ fontWeight: 700, fontSize: "0.9375rem" }}>
                   Selected {isBrainMri ? "MRI Scan" : "Radiograph Scan"}
                 </span>
@@ -199,7 +199,7 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({
 
             <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
               {previewUrl && (
-                <div style={{ width: "160px", height: "160px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border-glass)", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "160px", height: "160px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border-glass)", background: "var(--bg-tertiary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <img
                     src={previewUrl}
                     alt="Scan Preview"
@@ -215,7 +215,7 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({
                 <div style={{ color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: "1rem" }}>
                   Size: {(selectedFile.size / 1024).toFixed(1)} KB • Type: {selectedFile.type || "image/png"}
                 </div>
-                <div style={{ padding: "0.75rem", background: "rgba(56, 189, 248, 0.08)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(56, 189, 248, 0.2)", fontSize: "0.75rem", color: "var(--text-highlight)" }}>
+                <div style={{ padding: "0.75rem", background: "rgba(34, 197, 94, 0.08)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(34, 197, 94, 0.25)", fontSize: "0.75rem", color: "var(--text-highlight)" }}>
                   Image will be resized to 224×224 and normalized via {config.model_info?.model_type || "CNN"} for clinical decision support.
                 </div>
               </div>

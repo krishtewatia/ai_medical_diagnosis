@@ -87,14 +87,14 @@ export const ResultPage: React.FC = () => {
     return (
       <div className="container page-container" style={{ textAlign: "center", padding: "4rem 1.5rem" }}>
         <div className="glass-card" style={{ maxWidth: "540px", margin: "0 auto", padding: "3rem 2rem" }}>
-          <div style={{ display: "inline-flex", padding: "1rem", borderRadius: "50%", background: "rgba(56, 189, 248, 0.1)", marginBottom: "1.5rem" }}>
-            <Grid size={40} color="#38bdf8" />
+          <div style={{ display: "inline-flex", padding: "1rem", borderRadius: "50%", background: "rgba(34, 197, 94, 0.15)", marginBottom: "1.5rem" }}>
+            <Grid size={40} color="#16a34a" />
           </div>
           <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>No Active Screening Result</h2>
           <p style={{ color: "var(--text-muted)", marginBottom: "2rem", lineHeight: 1.6 }}>
             Please select a disease module from the catalog to execute a screening and generate a diagnostic assessment.
           </p>
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link to="/dashboard" className="btn btn-secondary">
               Dashboard
             </Link>

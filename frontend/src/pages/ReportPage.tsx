@@ -112,7 +112,7 @@ export const ReportPage: React.FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+        <div className="report-action-controls">
           <button
             onClick={handleDownload}
             disabled={downloading}
@@ -151,8 +151,8 @@ export const ReportPage: React.FC = () => {
       <div className="stats-grid" style={{ marginBottom: "2rem" }}>
         {/* Patient / Session Info */}
         <div className="stat-card glass-card">
-          <div className="stat-icon-wrapper" style={{ background: "rgba(56, 189, 248, 0.1)" }}>
-            <User size={20} color="#38bdf8" />
+          <div className="stat-icon-wrapper" style={{ background: "rgba(34, 197, 94, 0.12)" }}>
+            <User size={20} color="#16a34a" />
           </div>
           <div>
             <div className="stat-label">Patient / Practitioner</div>
@@ -167,8 +167,8 @@ export const ReportPage: React.FC = () => {
 
         {/* Modality & Engine */}
         <div className="stat-card glass-card">
-          <div className="stat-icon-wrapper" style={{ background: "rgba(139, 92, 246, 0.1)" }}>
-            <Cpu size={20} color="#8b5cf6" />
+          <div className="stat-icon-wrapper" style={{ background: "rgba(124, 58, 237, 0.12)" }}>
+            <Cpu size={20} color="#7c3aed" />
           </div>
           <div>
             <div className="stat-label">Model Architecture</div>
@@ -183,12 +183,12 @@ export const ReportPage: React.FC = () => {
 
         {/* Screening Outcome Status */}
         <div className="stat-card glass-card">
-          <div className="stat-icon-wrapper" style={{ background: isPos ? "rgba(244, 63, 94, 0.1)" : "rgba(16, 185, 129, 0.1)" }}>
-            {isPos ? <AlertTriangle size={20} color="#f43f5e" /> : <CheckCircle2 size={20} color="#10b981" />}
+          <div className="stat-icon-wrapper" style={{ background: isPos ? "rgba(225, 29, 72, 0.12)" : "rgba(34, 197, 94, 0.12)" }}>
+            {isPos ? <AlertTriangle size={20} color="#e11d48" /> : <CheckCircle2 size={20} color="#16a34a" />}
           </div>
           <div>
             <div className="stat-label">Screening Finding</div>
-            <div className="stat-value" style={{ fontSize: "1.125rem", color: isPos ? "#fda4af" : "#86efac" }}>
+            <div className="stat-value" style={{ fontSize: "1.125rem", color: isPos ? "#be123c" : "#15803d" }}>
               {report.prediction}
             </div>
             <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", marginTop: "2px" }}>
@@ -253,10 +253,10 @@ export const ReportPage: React.FC = () => {
           </div>
         )}
 
-        {/* Evaluated Inputs Section */}
+        {/* Evaluated Clinical Biometrics / Features Grid */}
         {report.input_summary && Object.keys(report.input_summary).length > 0 && (
           <div className="inputs-snapshot-section">
-            <h4 className="snapshot-title">Evaluated Clinical Parameters & Scan Telemetry</h4>
+            <h4 className="snapshot-title">Evaluated Clinical Biomarkers</h4>
             <div className="snapshot-grid">
               {Object.entries(report.input_summary).map(([key, val]) => (
                 <div key={key} className="snapshot-item">
@@ -271,9 +271,9 @@ export const ReportPage: React.FC = () => {
         {/* Embedded PDF Document Preview Container */}
         {report.download_url && (
           <div style={{ marginTop: "2rem", marginBottom: "1.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.9375rem" }}>
-                <FileText size={18} color="#38bdf8" />
+                <FileText size={18} color="#16a34a" />
                 <span>Generated PDF Document Preview</span>
               </div>
               <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
@@ -281,7 +281,7 @@ export const ReportPage: React.FC = () => {
               </span>
             </div>
 
-            <div style={{ width: "100%", height: "520px", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border-glass)", background: "#0f172a" }}>
+            <div className="report-pdf-viewport">
               <iframe
                 src={report.download_url}
                 title="Clinical PDF Screening Report"

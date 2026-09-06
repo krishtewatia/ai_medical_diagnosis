@@ -81,9 +81,9 @@ export const HistoryPage: React.FC = () => {
         </div>
 
         {/* Dynamic Disease Filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "rgba(15, 23, 42, 0.8)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <Filter size={16} color="var(--text-dim)" />
+        <div className="history-filter-wrapper">
+          <div className="history-filter-box">
+            <Filter size={16} color="var(--accent-parrot-dark)" />
             <select
               className="form-input"
               style={{ width: "auto", border: "none", background: "transparent", padding: "0.375rem 0.5rem" }}
@@ -115,8 +115,8 @@ export const HistoryPage: React.FC = () => {
         </div>
       ) : items.length === 0 ? (
         <div className="glass-card" style={{ padding: "4rem 2rem", textAlign: "center" }}>
-          <div style={{ display: "inline-flex", padding: "1.25rem", borderRadius: "50%", background: "rgba(56, 189, 248, 0.1)", marginBottom: "1.5rem" }}>
-            <History size={48} color="#38bdf8" />
+          <div style={{ display: "inline-flex", padding: "1.25rem", borderRadius: "50%", background: "rgba(34, 197, 94, 0.15)", marginBottom: "1.5rem" }}>
+            <History size={48} color="#16a34a" />
           </div>
           <h3 style={{ fontSize: "1.375rem", fontWeight: 700, marginBottom: "0.5rem" }}>No Historical Records Located</h3>
           <p style={{ color: "var(--text-muted)", maxWidth: "480px", margin: "0 auto 2rem", lineHeight: 1.6 }}>
@@ -191,7 +191,7 @@ export const HistoryPage: React.FC = () => {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "2rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border-glass)" }}>
+            <div className="history-pagination-row">
               <span style={{ fontSize: "0.875rem", color: "var(--text-dim)" }}>
                 Showing page <strong>{page + 1}</strong> of <strong>{totalPages}</strong> ({total} total)
               </span>

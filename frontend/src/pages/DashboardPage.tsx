@@ -109,14 +109,14 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* 2. Workstation Quick Action Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
+      <div className="dashboard-quick-actions-grid">
         <Link
           to="/diseases"
           className="glass-card"
           style={{ padding: "1.25rem", textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: "1rem" }}
         >
-          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
-            <Zap size={22} color="#38bdf8" />
+          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)" }}>
+            <Zap size={22} color="#16a34a" />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>Start Screening</div>
@@ -131,8 +131,8 @@ export const DashboardPage: React.FC = () => {
           className="glass-card"
           style={{ padding: "1.25rem", textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: "1rem" }}
         >
-          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
-            <History size={22} color="#10b981" />
+          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(13, 148, 136, 0.12)", border: "1px solid rgba(13, 148, 136, 0.25)" }}>
+            <History size={22} color="#0d9488" />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>Prediction History</div>
@@ -147,8 +147,8 @@ export const DashboardPage: React.FC = () => {
           className="glass-card"
           style={{ padding: "1.25rem", textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: "1rem" }}
         >
-          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(139, 92, 246, 0.15)", border: "1px solid rgba(139, 92, 246, 0.3)" }}>
-            <User size={22} color="#8b5cf6" />
+          <div style={{ padding: "0.75rem", borderRadius: "var(--radius-md)", background: "rgba(124, 58, 237, 0.12)", border: "1px solid rgba(124, 58, 237, 0.25)" }}>
+            <User size={22} color="#7c3aed" />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>Medical Profile</div>
@@ -162,7 +162,7 @@ export const DashboardPage: React.FC = () => {
         <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <div>
             <h2 className="section-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Sparkles size={20} color="#38bdf8" />
+              <Sparkles size={20} color="#16a34a" />
               <span>Available AI Screening Modules</span>
             </h2>
             <p className="section-subtitle">
@@ -210,7 +210,7 @@ export const DashboardPage: React.FC = () => {
         <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <div>
             <h2 className="section-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <History size={20} color="#10b981" />
+              <History size={20} color="#16a34a" />
               <span>Recent Screenings & Audit Log</span>
             </h2>
             <p className="section-subtitle">
