@@ -1,14 +1,16 @@
-import { api, getAuthToken } from "./api";
+import { api, API_BASE_URL, getAuthToken } from "./api";
 import type { MedicalReportResponse } from "../types";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export const reportService = {
   /**
    * Fetches or generates a clinical PDF screening report for a specific prediction.
    */
   getReport: async (predictionId: string): Promise<MedicalReportResponse> => {
-    return api.get<MedicalReportResponse>(`/reports/${predictionId}`);
+    const report = await api.get<MedicalReportResponse>(`/reports/${predictionId}`);
+    if (report.download_url) {
+      report.download_url = new URL(report.download_url, `${API_BASE_URL}/`).href;
+    }
+    return report;
   },
 
   /**

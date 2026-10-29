@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional
+from threading import Lock
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 
 from app.api.dependencies import get_current_user
 from app.ml.disease_registry import DiseaseNotFoundError, disease_registry
@@ -17,6 +19,15 @@ router = APIRouter(
     prefix="/predictions",
     tags=["Predictions"]
 )
+
+
+_image_inference_lock = Lock()
+
+
+def _predict_image_serially(service: PredictionService, **kwargs) -> PredictionResponse:
+    # Model loading and inference share a limited memory budget on Render.
+    with _image_inference_lock:
+        return service.predict_image(**kwargs)
 
 
 def get_prediction_service() -> PredictionService:
@@ -121,7 +132,9 @@ async def predict_image_disease(
 
     try:
         image_bytes = await file.read()
-        return service.predict_image(
+        return await run_in_threadpool(
+            _predict_image_serially,
+            service,
             disease_id=disease_id,
             image_bytes=image_bytes,
             filename=file.filename,

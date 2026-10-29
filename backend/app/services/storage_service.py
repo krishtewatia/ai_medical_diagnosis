@@ -117,7 +117,7 @@ class StorageService:
         ext = "png"
         if filename:
             parsed_ext = Path(filename).suffix.lstrip(".").lower()
-            if parsed_ext in ["png", "jpg", "jpeg", "dicom", "dcm"]:
+            if parsed_ext in ["png", "jpg", "jpeg", "dicom", "dcm", "pdf"]:
                 ext = parsed_ext
 
         unique_id = uuid.uuid4().hex
@@ -280,7 +280,7 @@ class StorageService:
                 message,
                 hashlib.sha256
             ).hexdigest()
-            return f"/api/storage/media/{storage_key}?expires={expiry_timestamp}&signature={signature}"
+            return f"/storage/media/{storage_key}?expires={expiry_timestamp}&signature={signature}"
 
     def verify_signed_url(
         self,

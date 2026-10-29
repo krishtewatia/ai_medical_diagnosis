@@ -71,7 +71,12 @@ def stream_signed_media(
     try:
         data = default_storage_service.get_object(path)
         ext = path.split(".")[-1].lower()
-        media_type = f"image/{ext}" if ext in ["png", "jpg", "jpeg"] else "application/octet-stream"
+        media_type = {
+            "pdf": "application/pdf",
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+        }.get(ext, "application/octet-stream")
         return Response(content=data, media_type=media_type)
     except StorageNotFoundError:
         raise HTTPException(

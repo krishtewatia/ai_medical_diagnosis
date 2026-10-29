@@ -28,4 +28,5 @@ ENV PYTHONUNBUFFERED=1 \
     KERAS_BACKEND=torch
 
 # Run uvicorn web server
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
+# Keep one copy of the model cache in memory on the free Render instance.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}"]

@@ -360,7 +360,7 @@ class ReportService:
         # 3. Generate PDF bytes and store in object storage
         pdf_bytes = self.build_pdf_document(report_response)
         
-        self.storage_service.upload_file(
+        stored_file = self.storage_service.upload_file(
             image_bytes=pdf_bytes,
             filename=f"{report_id}.pdf",
             content_type="application/pdf",
@@ -369,7 +369,8 @@ class ReportService:
         )
 
         # 4. Generate temporary signed URL
-        signed_url = self.storage_service.get_signed_url(storage_key)
+        report_response.storage_key = stored_file.storage_key
+        signed_url = self.storage_service.get_signed_url(stored_file.storage_key)
         report_response.download_url = signed_url
 
         return report_response

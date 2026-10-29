@@ -4,7 +4,7 @@
  * and unified error formatting.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 export class ApiError extends Error {
   status: number;
