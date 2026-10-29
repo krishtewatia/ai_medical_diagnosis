@@ -1,8 +1,11 @@
 import asyncio
 import threading
+import sys
+import zipfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
+from pathlib import Path
 
 import httpx
 from fastapi.testclient import TestClient
@@ -13,6 +16,8 @@ from app.api.prediction import get_prediction_service
 from app.main import app
 from app.services.report_service import ReportService
 from app.services.storage_service import StorageService
+from app.ml import loaders
+from app.ml.disease_registry import DiseaseRegistry, disease_registry
 
 
 def test_report_signed_url_serves_uploaded_pdf(tmp_path, monkeypatch):
@@ -82,3 +87,38 @@ def test_image_inference_keeps_event_loop_responsive():
     finally:
         app.dependency_overrides.clear()
         app.dependency_overrides.update(previous)
+
+
+def test_keras_archive_loads_weights_from_disk(tmp_path, monkeypatch):
+    artifact = tmp_path / "sample.keras"
+    with zipfile.ZipFile(artifact, "w") as archive:
+        archive.writestr("config.json", "{}")
+        archive.writestr("model.weights.h5", b"sample-weights")
+    model = object()
+    extracted = []
+
+    def load(directory, compile):
+        assert compile is False
+        folder = Path(directory)
+        assert folder.is_dir()
+        assert (folder / "model.weights.h5").read_bytes() == b"sample-weights"
+        extracted.append(folder)
+        return model
+
+    monkeypatch.setitem(sys.modules, "keras", SimpleNamespace(models=SimpleNamespace(load_model=load)))
+    assert loaders._load_keras_artifact(artifact) is model
+    assert not extracted[0].exists()
+
+
+def test_switching_image_models_releases_previous_model(monkeypatch):
+    registry = DiseaseRegistry(auto_load=False)
+    for disease in ["pneumonia", "brain_tumor"]:
+        registry.register(disease_registry.get_or_raise(disease))
+    old_model, new_model = object(), object()
+    registry._predictor_instances = {"pneumonia": old_model, "brain_tumor": new_model}
+    config = registry.get_or_raise("pneumonia")
+    key = str((Path(config.model_dir) / config.artifact_filename).resolve())
+    monkeypatch.setitem(loaders._MODEL_CACHE, key, (0, old_model))
+    assert registry.get_predictor("brain_tumor") is new_model
+    assert "pneumonia" not in registry._predictor_instances
+    assert key not in loaders._MODEL_CACHE

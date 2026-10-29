@@ -1,11 +1,13 @@
 from typing import Dict, List, Optional, Type
+import gc
+from pathlib import Path
 
 from app.ml.base_predictor import (
     BaseImagePredictor,
     BasePredictor,
     BaseTabularPredictor,
 )
-from app.ml.loaders import discover_and_load_disease_configs
+from app.ml.loaders import _MODEL_CACHE, discover_and_load_disease_configs
 from app.schemas.disease_config import (
     DiseaseCategory,
     DiseaseConfig,
@@ -164,6 +166,20 @@ class DiseaseRegistry:
         Raises PredictorNotRegisteredError if no predictor is bound.
         """
         config = self.get_or_raise(disease_id)
+
+        if config.category == DiseaseCategory.IMAGE:
+            # Image requests are serialized by the API. Retain only the active
+            # image model rather than keeping both large CNNs in the container.
+            evicted = False
+            for other_id in list(self._predictor_instances):
+                other = self._configs[other_id]
+                if other_id != disease_id and other.category == DiseaseCategory.IMAGE:
+                    self._predictor_instances.pop(other_id)
+                    artifact = Path(other.model_dir) / other.artifact_filename
+                    _MODEL_CACHE.pop(str(artifact.resolve()), None)
+                    evicted = True
+            if evicted:
+                gc.collect()
 
         # Return cached instance if available
         if disease_id in self._predictor_instances:

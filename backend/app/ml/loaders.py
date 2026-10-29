@@ -1,6 +1,9 @@
 import json
 import os
 import pickle
+import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -82,6 +85,23 @@ def _load_keras_artifact(path: Path) -> Any:
 
     try:
         import keras
+        if path.suffix == ".keras" and zipfile.is_zipfile(path):
+            # Keras can otherwise copy the entire weights archive into RAM.
+            # Stream it to disk so loading respects small container budgets.
+            with tempfile.TemporaryDirectory(prefix="medical-model-") as directory:
+                root = Path(directory).resolve()
+                with zipfile.ZipFile(path) as archive:
+                    for member in archive.infolist():
+                        target = (root / member.filename).resolve()
+                        if not target.is_relative_to(root):
+                            raise ValueError("Model archive contains an invalid path")
+                        if member.is_dir():
+                            target.mkdir(parents=True, exist_ok=True)
+                        else:
+                            target.parent.mkdir(parents=True, exist_ok=True)
+                            with archive.open(member) as source, target.open("wb") as destination:
+                                shutil.copyfileobj(source, destination)
+                return keras.models.load_model(str(root), compile=False)
         return keras.models.load_model(str(path), compile=False)
     except Exception as e_keras:
         try:
