@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy and install python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir 'torch>=2.4.0' --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code and model artifacts
@@ -25,7 +26,9 @@ EXPOSE 8000
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
-    KERAS_BACKEND=torch
+    KERAS_BACKEND=torch \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1
 
 # Run uvicorn web server
 # Keep one copy of the model cache in memory on the free Render instance.
